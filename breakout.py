@@ -4,8 +4,9 @@ import mplfinance as mpf
 import warnings
 import streamlit as st
 
+
 ######################
-# Set the display option to show 2 decimal places and 1000 rows
+# Set the display option to show 2 decimal places
 pd.set_option('display.float_format', '{:.2f}'.format)
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
@@ -80,32 +81,47 @@ def plot_ticker(ticker):
 
 leftcol, midcol, rightcol = st.columns([1,1,1])
 
+
+##### Data download & Calculations #####
+
 with leftcol:
     with st.expander('Metadata'):
         metadata = download_metadata()
+        st.text(f'{len(metadata)} tickers inputted')
         st.dataframe(metadata, hide_index=True)
 
     with st.expander('Data (initial download takes roughly 5 minutes)'):
         data = download_data()
         st.dataframe(data)
 
+    ##### User Input for Z score threshold and Lookback period #####
     threshcol, lookbackcol =  st.columns([1,1])
     with threshcol:
         threshold = st.number_input('Z-Score (default=2)', value=2.0)
     with lookbackcol:
-        lookback = st.number_input('Lookback (default=0)', value=0)
+        lookback = st.number_input('Lookback (default=0)', value=0, min_value=0, max_value=50)
         lookback = lookback*-1
+
     if lookback == 0:
         breakouts = scanner(data,threshold)
+
+    ##### Special condition if a lookback period is added. Loop through lookback += 1 with combined list #####
     else:
-        breakouts = scanner(data[:lookback],threshold)
+        breakouts = pd.DataFrame()
+        while lookback != -1:
+            breakouts_temp = scanner(data[:lookback],threshold)
+            breakouts = pd.concat([breakouts, breakouts_temp])
+            lookback += 1
+        breakouts_temp = scanner(data,threshold)
+        breakouts = pd.concat([breakouts, breakouts_temp])
 
     st.markdown('Breakouts')
-    st.dataframe(breakouts, hide_index=True)
+    st.dataframe(breakouts, hide_index=False)
 
 
+##### Plotting charts in Mid & Right columns #####
 i = 0
-for ticker in breakouts.ticker:
+for ticker in breakouts.ticker.unique():
     if i % 2 == 0:
         with midcol:
             st.pyplot(plot_ticker(ticker))
@@ -115,7 +131,3 @@ for ticker in breakouts.ticker:
             st.pyplot(plot_ticker(ticker))
             i += 1
     
-
-
-
-
