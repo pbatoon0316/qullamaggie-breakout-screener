@@ -71,20 +71,24 @@ def plot_ticker(ticker):
 
     # Add watermark as text annotation
     watermark_text = ticker
+    company_name = metadata[metadata['Symbol']==ticker]['Name'].item()
+    company_sector = metadata[metadata['Symbol']==ticker]['Sector'].item()
+    
     watermark_position = (0.3, 0.65)  # Adjust the position as per your preference
     fig.text(watermark_position[0], watermark_position[1], watermark_text, fontsize=80, color='black', alpha=0.1)
-    st.markdown(f'''[{metadata[metadata['Symbol']==ticker]['Name'].item()} - {metadata[metadata['Symbol']==ticker]['Sector'].item()}](https://finviz.com/quote.ashx?t={ticker}&p=d)''')
+
+    st.markdown(f'''[{company_name} - {company_sector}](https://finviz.com/quote.ashx?t={ticker}&p=d)''')
 
     return fig
 
 ######################
 
-leftcol, midcol, rightcol = st.columns([1,1,1])
+left_datacontainer, right_resultcontainer = st.columns([1,2])
 
 
 ##### Data download & Calculations #####
 
-with leftcol:
+with left_datacontainer:
     with st.expander('Metadata'):
         metadata = download_metadata()
         st.text(f'{len(metadata)} tickers inputted')
@@ -108,7 +112,7 @@ with leftcol:
     ##### Special condition if a lookback period is added. Loop through lookback += 1 with combined list #####
     else:
         breakouts = pd.DataFrame()
-        while lookback != -1:
+        while lookback < 0:
             breakouts_temp = scanner(data[:lookback],threshold)
             breakouts = pd.concat([breakouts, breakouts_temp])
             lookback += 1
@@ -116,18 +120,26 @@ with leftcol:
         breakouts = pd.concat([breakouts, breakouts_temp])
 
     st.markdown('Breakouts')
+    breakouts = breakouts.reset_index()
+    breakouts = breakouts.sort_values(by=['Date','volume_average'], ascending=False)
+    breakouts = breakouts.set_index('Date')
     st.dataframe(breakouts, hide_index=False)
 
 
+
 ##### Plotting charts in Mid & Right columns #####
-i = 0
-for ticker in breakouts.ticker.unique():
-    if i % 2 == 0:
-        with midcol:
-            st.pyplot(plot_ticker(ticker))
-            i += 1
-    else:
-        with rightcol:
-            st.pyplot(plot_ticker(ticker))
-            i += 1
-    
+
+with right_resultcontainer:
+
+    left_resultsplot, right_resultsplot = st.columns([1,1])
+
+    i = 0
+    for ticker in breakouts.ticker.unique():
+        if i % 2 == 0:
+            with left_resultsplot:
+                st.pyplot(plot_ticker(ticker))
+                i += 1
+        else:
+            with right_resultsplot:
+                st.pyplot(plot_ticker(ticker))
+                i += 1
