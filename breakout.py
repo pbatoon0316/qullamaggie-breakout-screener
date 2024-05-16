@@ -28,7 +28,7 @@ def download_data():
     data = yf.download(tickers, period='90d', auto_adjust=True, progress=True)
     return data
 
-@st.cache_data(ttl='5m')
+@st.cache_data(ttl='1hr')
 def scanner(data,threshold=2):
     tickers = list(data.columns.get_level_values(1).unique())
     breakouts = pd.DataFrame()
