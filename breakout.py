@@ -77,7 +77,7 @@ def plot_ticker(ticker):
     watermark_position = (0.3, 0.65)  # Adjust the position as per your preference
     fig.text(watermark_position[0], watermark_position[1], watermark_text, fontsize=80, color='black', alpha=0.1)
 
-    st.markdown(f'''{ticker} - {company_sector} [FV](https://finviz.com/quote.ashx?t={ticker}&p=d)|[PV](https://profitviz.com/{ticker})''')
+    st.markdown(f'''{ticker} - {company_sector} [[FV]](https://finviz.com/quote.ashx?t={ticker}&p=d) | [[PV]](https://profitviz.com/{ticker})''')
 
     return fig
 
